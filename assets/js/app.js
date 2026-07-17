@@ -1856,12 +1856,14 @@ function handleAction(action, id, el) {
     case 'add-debt': openDebtForm(); break;
     case 'save-debt': saveDebtFromForm(id || null); break;
     case 'pay-debt-menu': openPayDebtForm(id); break;
+    case 'adjust-debt-balance': openAdjustDebtBalanceForm(id); break;
     case 'debt-menu': {
       const d = Debts.getDebt(id);
       openActionMenu(el, [
         ...(d.balance > 0 ? [{ icon: 'fa-solid fa-money-bill-wave', label: 'Make a Payment', onClick: () => openPayDebtForm(id) }] : []),
         { icon: 'fa-solid fa-pen', label: 'Edit', onClick: () => openDebtForm(d) },
-        { icon: 'fa-solid fa-clock-rotate-left', label: 'Payment History', onClick: () => openDebtHistoryModal(id) },
+        { icon: 'fa-solid fa-sliders', label: 'Adjust Balance', onClick: () => openAdjustDebtBalanceForm(id) },
+        { icon: 'fa-solid fa-clock-rotate-left', label: 'Payment & Adjustment History', onClick: () => openDebtHistoryModal(id) },
         ...(d.lastPayment ? [{ icon: 'fa-solid fa-rotate-left', label: 'Undo Last Payment', onClick: () => confirmAction('Undo Last Payment?', 'This removes the recorded transaction and restores the wallet balance and prior debt balance.', () => { Debts.undoDebtPayment(id); toast('Payment undone.', 'success'); rerender(); }) }] : []),
         { divider: true },
         { icon: 'fa-solid fa-trash', label: 'Delete', danger: true, onClick: () => confirmAction('Delete Debt?', `Delete "${d.name}"? This doesn't delete its past payment transactions, and any bills linked to it will become standalone again.`, () => { Debts.deleteDebt(id); toast('Debt deleted.', 'success'); rerender(); }) },
@@ -2215,7 +2217,7 @@ function debtCardHtml(d) {
       <h3><i class="fa-solid fa-hand-holding-dollar" style="margin-right:8px;color:var(--coral);"></i>${escapeHtml(d.name)}</h3>
       <div class="dropdown"><button class="icon-btn btn-icon-only" data-action="debt-menu" data-id="${d.id}"><i class="fa-solid fa-ellipsis-vertical"></i></button></div>
     </div>
-    <div class="text-mid" style="font-size:11.5px;margin-bottom:10px;">${wallet ? 'Paid from ' + escapeHtml(wallet.name) : 'No linked wallet'}${d.apr > 0 ? ` · ${d.apr}% APR` : ' · No interest tracked'}</div>
+    <div class="text-mid" style="font-size:11.5px;margin-bottom:10px;">${wallet ? 'Paid from ' + escapeHtml(wallet.name) : 'No linked wallet'}${d.apr > 0 ? ` · ${d.apr}% APR` : ' · No interest tracked'}${d.termMonths ? ` · ${d.termMonths}-month term` : ''}</div>
     ${linkedBills.length ? `<div class="text-mid" style="font-size:11px;margin-bottom:10px;"><i class="fa-solid fa-link" style="font-size:9px;"></i> Auto-paid via: ${linkedBills.map(b=>escapeHtml(b.name)).join(', ')}</div>` : ''}
     <div class="progress" style="margin-bottom:10px;"><div class="progress-fill" style="width:${progress}%;${progress>=100?'background:linear-gradient(90deg,var(--gold),var(--mint));':''}"></div></div>
     <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;">
@@ -2239,22 +2241,56 @@ function debtFormHtml(d = null) {
   <form id="debtForm">
     <div class="form-group"><label class="form-label">Debt Name</label><input class="form-input" name="name" placeholder="e.g. Credit Card Balance" value="${d?escapeHtml(d.name):''}" required></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">${d ? 'Original Principal' : 'Current Balance Owed'}</label><input class="form-input" name="principal" type="number" step="0.01" min="0" value="${d?d.principal:''}" required></div>
-      <div class="form-group"><label class="form-label">APR % <span class="text-low">(0 if none)</span></label><input class="form-input" name="apr" type="number" step="0.01" min="0" value="${d?d.apr:'0'}"></div>
+      <div class="form-group"><label class="form-label">Original Principal Amount</label><input class="form-input" name="principal" id="debtPrincipalInput" type="number" step="0.01" min="0" value="${d?d.principal:''}" required></div>
+      <div class="form-group"><label class="form-label">Number of Months to Pay</label><input class="form-input" name="termMonths" id="debtTermInput" type="number" step="1" min="0" placeholder="e.g. 12" value="${d && d.termMonths ? d.termMonths : ''}"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Minimum / Planned Monthly Payment</label><input class="form-input" name="minimumPayment" type="number" step="0.01" min="0" value="${d?d.minimumPayment:''}"></div>
-      <div class="form-group"><label class="form-label">Pay From Wallet</label><select class="form-select" name="walletId"><option value="">None</option>${wallets.map(w=>`<option value="${w.id}" ${d&&d.walletId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></div>
+      <div class="form-group">
+        <label class="form-label">Monthly Payment <span class="text-low">(auto-calculated)</span></label>
+        <input class="form-input" name="minimumPayment" id="debtMonthlyPaymentInput" type="number" step="0.01" min="0" value="${d?d.minimumPayment:''}">
+        <p class="form-hint">Principal ÷ Months, filled in automatically — edit it yourself if your actual payment differs (e.g. interest-adjusted).</p>
+      </div>
+      <div class="form-group"><label class="form-label">APR % <span class="text-low">(0 if none)</span></label><input class="form-input" name="apr" type="number" step="0.01" min="0" value="${d?d.apr:'0'}"></div>
     </div>
+    <div class="form-group"><label class="form-label">Pay From Wallet</label><select class="form-select" name="walletId"><option value="">None</option>${wallets.map(w=>`<option value="${w.id}" ${d&&d.walletId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></div>
     <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" name="notes" placeholder="Optional notes...">${d?escapeHtml(d.notes):''}</textarea></div>
-    ${!d ? `<p class="form-hint">This sets both the original principal and starting balance to the amount above.</p>` : ''}
+    ${!d ? `<p class="form-hint">This sets both the original principal and starting balance to the amount above.</p>` : `
+    <div class="card" style="padding:14px;margin-top:4px;background:var(--bg-2);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <div class="form-label" style="margin-bottom:2px;">Current Remaining Balance</div>
+          <div class="stat-value mono" style="font-size:18px;">${formatMoney(d.balance)}</div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="adjust-debt-balance" data-id="${d.id}"><i class="fa-solid fa-sliders"></i> Adjust Balance</button>
+      </div>
+      <p class="form-hint" style="margin-top:8px;margin-bottom:0;">Editing the principal or term here doesn't change what you currently owe — use Adjust Balance to correct the remaining balance itself. That always keeps a dated record of the change.</p>
+    </div>`}
   </form>`;
 }
 
+/** Keeps Monthly Payment auto-computed as Principal ÷ Months whenever either
+ *  changes, so the two stay consistent without the user doing the math. */
+function wireDebtFormAutoCalc() {
+  const principalEl = document.getElementById('debtPrincipalInput');
+  const termEl = document.getElementById('debtTermInput');
+  const paymentEl = document.getElementById('debtMonthlyPaymentInput');
+  if (!principalEl || !termEl || !paymentEl) return;
+  const recalc = () => {
+    const principal = Number(principalEl.value) || 0;
+    const months = Number(termEl.value) || 0;
+    if (principal > 0 && months > 0) paymentEl.value = round2(principal / months);
+  };
+  principalEl.addEventListener('input', recalc);
+  termEl.addEventListener('input', recalc);
+}
+
 function openDebtForm(existing = null) {
-  const doOpen = () => openModal(existing?'Edit Debt':'New Debt', debtFormHtml(existing), `
+  const doOpen = () => {
+    openModal(existing?'Edit Debt':'New Debt', debtFormHtml(existing), `
     <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
     <button class="btn btn-primary" data-action="save-debt" data-id="${existing?existing.id:''}"><i class="fa-solid fa-check"></i> ${existing?'Save':'Create Debt'}</button>`);
+    wireDebtFormAutoCalc();
+  };
   if (document.getElementById('modalOverlay').classList.contains('open')) { closeModal(); setTimeout(doOpen, 60); } else doOpen();
 }
 
@@ -2264,6 +2300,61 @@ function saveDebtFromForm(id) {
   if (id) Debts.updateDebt(id, data); else Debts.createDebt(data);
   toast(id?'Debt updated.':'Debt created.', 'success');
   closeModal(); rerender();
+}
+
+function openAdjustDebtBalanceForm(id) {
+  const d = Debts.getDebt(id);
+  if (!d) return;
+  const doOpen = () => {
+    openModal(`Adjust Balance — ${escapeHtml(d.name)}`, `
+      <form id="adjustBalanceForm">
+        <p class="form-hint" style="margin-bottom:14px;">Use this to correct the remaining balance if it doesn't match your statement or the payoff was recorded wrong. This doesn't move any money — it only fixes what's tracked here — and it's logged with a reason so the correction stays auditable.</p>
+        <div class="stat-card accent-coral" style="margin-bottom:16px;">
+          <div class="stat-label">Current Tracked Balance</div>
+          <div class="stat-value mono">${formatMoney(d.balance)}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correct Remaining Balance</label>
+          <div class="amount-currency-prefix"><span class="mono">${Utils.currencySymbol()}</span><input class="amount-input-big" id="adjustNewBalanceInput" name="newBalance" type="number" step="0.01" min="0" value="${d.balance}" required></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason for Adjustment</label>
+          <textarea class="form-textarea" name="reason" id="adjustReasonInput" placeholder="e.g. Statement shows a different balance, correcting a data-entry error, bank added a fee..." required></textarea>
+        </div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" name="date" type="date" value="${todayISO()}"></div>
+        <p class="form-hint" id="adjustPreviewText"></p>
+      </form>
+    `, `
+      <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn btn-primary" id="saveAdjustBalanceBtn"><i class="fa-solid fa-check"></i> Save Adjustment</button>
+    `);
+    const newBalanceEl = document.getElementById('adjustNewBalanceInput');
+    const previewEl = document.getElementById('adjustPreviewText');
+    const updatePreview = () => {
+      const newBalance = Number(newBalanceEl.value);
+      if (Number.isNaN(newBalance) || newBalance < 0) { previewEl.textContent = ''; return; }
+      const delta = round2(newBalance - d.balance);
+      const proj = d.minimumPayment > 0 ? Debts.projectPayoff(newBalance, d.apr, d.minimumPayment) : null;
+      const deltaTxt = delta === 0 ? 'No change from the current balance.' : `${delta > 0 ? 'Increases' : 'Decreases'} the balance by ${formatMoney(Math.abs(delta))}.`;
+      const monthsTxt = proj && proj.feasible ? ` Remaining months recalculates to ${proj.months} at the current monthly payment.` : '';
+      previewEl.textContent = deltaTxt + monthsTxt;
+    };
+    newBalanceEl.addEventListener('input', updatePreview);
+    updatePreview();
+    document.getElementById('saveAdjustBalanceBtn').addEventListener('click', () => {
+      const newBalance = Number(document.getElementById('adjustNewBalanceInput').value);
+      const reason = document.getElementById('adjustReasonInput').value.trim();
+      const date = document.querySelector('#adjustBalanceForm [name="date"]').value;
+      if (Number.isNaN(newBalance) || newBalance < 0) { toast('Enter a valid balance.', 'error'); return; }
+      if (!reason) { toast('A reason is required for the audit trail.', 'error'); return; }
+      try {
+        Debts.adjustDebtBalance(id, newBalance, reason, date);
+        toast('Balance adjusted.', 'success');
+        closeModal(); rerender();
+      } catch (e) { toast(e.message, 'error'); }
+    });
+  };
+  if (document.getElementById('modalOverlay').classList.contains('open')) { closeModal(); setTimeout(doOpen, 60); } else doOpen();
 }
 
 function openPayDebtForm(id) {
@@ -2292,18 +2383,38 @@ function openPayDebtForm(id) {
 function openDebtHistoryModal(id) {
   const d = Debts.getDebt(id);
   if (!d) return;
-  const history = Debts.debtPaymentHistory(id);
-  const totalPaid = round2(history.reduce((sum, t) => sum + t.amount, 0));
+  const trail = Debts.debtAuditTrail(id);
+  const totalPaid = round2(trail.filter(e => e.kind === 'payment').reduce((sum, e) => sum + e.amount, 0));
+  const adjustmentCount = trail.filter(e => e.kind === 'adjustment').length;
+  const rowHtml = (e) => {
+    if (e.kind === 'payment') {
+      return `<tr>
+        <td>${formatDate(e.date)}</td>
+        <td><span class="badge badge-mint" style="font-size:10px;"><i class="fa-solid fa-money-bill-wave"></i> Payment</span></td>
+        <td class="text-mid">${escapeHtml(e.notes || '—')}</td>
+        <td style="text-align:right;" class="mono text-negative">-${formatMoney(e.amount)}</td>
+      </tr>`;
+    }
+    const deltaCls = e.adjustment > 0 ? 'text-negative' : e.adjustment < 0 ? 'text-positive' : 'text-mid';
+    const deltaSign = e.adjustment > 0 ? '+' : e.adjustment < 0 ? '-' : '';
+    return `<tr>
+      <td>${formatDate(e.date)}</td>
+      <td><span class="badge badge-gold" style="font-size:10px;"><i class="fa-solid fa-sliders"></i> Adjustment</span></td>
+      <td class="text-mid">${escapeHtml(e.reason)}<br><span style="font-size:11px;">${formatMoney(e.previousBalance)} → ${formatMoney(e.newBalance)}</span></td>
+      <td style="text-align:right;" class="mono ${deltaCls}">${deltaSign}${formatMoney(Math.abs(e.adjustment))}</td>
+    </tr>`;
+  };
   const body = `
-    <div class="grid grid-2" style="margin-bottom:16px;">
+    <div class="grid grid-3" style="margin-bottom:16px;">
       <div class="stat-card accent-mint"><div class="stat-label">Total Paid</div><div class="stat-value mono">${formatMoney(totalPaid)}</div></div>
       <div class="stat-card accent-coral"><div class="stat-label">Balance Remaining</div><div class="stat-value mono">${formatMoney(d.balance)}</div></div>
+      <div class="stat-card accent-gold"><div class="stat-label">Balance Adjustments</div><div class="stat-value mono">${adjustmentCount}</div></div>
     </div>
-    <div class="table-wrap"><table class="data-table"><thead><tr><th>Date</th><th>Note</th><th style="text-align:right;">Amount</th></tr></thead><tbody>
-      ${history.length ? history.map(t => `<tr><td>${formatDate(t.date)}</td><td class="text-mid">${escapeHtml(t.notes || '—')}</td><td style="text-align:right;" class="mono text-negative">-${formatMoney(t.amount)}</td></tr>`).join('') : `<tr><td colspan="3"><div class="table-empty"><i class="fa-solid fa-clock-rotate-left"></i>No payments recorded yet.</div></td></tr>`}
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Date</th><th>Type</th><th>Details</th><th style="text-align:right;">Amount</th></tr></thead><tbody>
+      ${trail.length ? trail.map(rowHtml).join('') : `<tr><td colspan="4"><div class="table-empty"><i class="fa-solid fa-clock-rotate-left"></i>No payments or adjustments recorded yet.</div></td></tr>`}
     </tbody></table></div>
   `;
-  openModal(`${d.name} — Payment History`, body, `<button class="btn btn-ghost" data-action="close-modal">Close</button>`, { size: 'modal-lg' });
+  openModal(`${escapeHtml(d.name)} — Payment & Adjustment History`, body, `<button class="btn btn-ghost" data-action="close-modal">Close</button>`, { size: 'modal-lg' });
 }
 
 /* ============================================================

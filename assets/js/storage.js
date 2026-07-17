@@ -116,8 +116,8 @@ function buildSampleData() {
 
   // debts
   s.debts = [
-    { id: uid('debt'), name: 'Credit Card Balance', principal: 18000, balance: 14200, apr: 36, minimumPayment: 2000, walletId: payroll.id, category: 'Debt', notes: 'Pay more than the minimum to cut down interest.', lastPayment: null, createdAt: new Date().toISOString() },
-    { id: uid('debt'), name: 'Personal Loan', principal: 40000, balance: 31000, apr: 18, minimumPayment: 3000, walletId: payroll.id, category: 'Debt', notes: '', lastPayment: null, createdAt: new Date().toISOString() },
+    { id: uid('debt'), name: 'Credit Card Balance', principal: 18000, balance: 14200, apr: 36, termMonths: 9, minimumPayment: 2000, walletId: payroll.id, category: 'Debt', notes: 'Pay more than the minimum to cut down interest.', lastPayment: null, balanceAdjustments: [], createdAt: new Date().toISOString() },
+    { id: uid('debt'), name: 'Personal Loan', principal: 40000, balance: 31000, apr: 18, termMonths: 12, minimumPayment: 3333.33, walletId: payroll.id, category: 'Debt', notes: '', lastPayment: null, balanceAdjustments: [], createdAt: new Date().toISOString() },
   ];
 
   // automation rules
