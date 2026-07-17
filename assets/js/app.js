@@ -117,13 +117,22 @@ function wireSidebar() {
   });
   document.getElementById('mobileMenuBtn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('mobile-open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    document.body.classList.toggle('no-scroll');
   });
+  document.getElementById('sidebarOverlay').addEventListener('click', closeMobileSidebar);
   document.getElementById('quickAddSidebarBtn').addEventListener('click', () => openTransactionForm());
 }
 
 function closeMobileSidebar() {
   document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.classList.remove('no-scroll');
 }
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 980) closeMobileSidebar();
+});
 
 function wireTopbar() {
   document.getElementById('topbarSearchBtn').addEventListener('click', openPalette);
@@ -262,7 +271,7 @@ function wireModals() {
   document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
   document.getElementById('confirmOverlay').addEventListener('click', (e) => { if (e.target.id === 'confirmOverlay') closeConfirm(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); }
+    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); closeMobileSidebar(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
   });
 }

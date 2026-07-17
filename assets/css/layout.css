@@ -31,6 +31,17 @@
 .sidebar.collapsed .sidebar-collapse-btn i { transform: rotate(180deg); }
 .sidebar.collapsed .nav-item { justify-content: center; }
 
+.sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(4,6,9,0.55);
+  backdrop-filter: blur(2px);
+  z-index: 39;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-med) var(--ease), visibility var(--dur-med) var(--ease);
+}
+.sidebar-overlay.open { opacity: 1; visibility: visible; }
+
 .sidebar-brand {
   display: flex;
   align-items: center;
