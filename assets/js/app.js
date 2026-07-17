@@ -60,12 +60,14 @@ function startApp() {
 function updateAvatarDisplay() {
   const profile = Storage.getActiveProfile();
   const avatar = document.getElementById('avatarBtn');
-  if (profile) {
-    avatar.textContent = initials(profile.name);
-    avatar.style.background = profile.color ? `linear-gradient(135deg, ${profile.color}, var(--blue))` : '';
-  } else {
-    avatar.textContent = initials(state?.settings?.ownerName || 'JD');
-  }
+  const sbAvatar = document.getElementById('sidebarProfileAvatar');
+  const sbName = document.getElementById('sidebarProfileName');
+  const name = profile ? profile.name : (state?.settings?.ownerName || 'JD');
+  const gradient = profile?.color ? `linear-gradient(135deg, ${profile.color}, var(--blue))` : '';
+  avatar.textContent = initials(name);
+  avatar.style.background = gradient;
+  if (sbAvatar) { sbAvatar.textContent = initials(name); sbAvatar.style.background = gradient; }
+  if (sbName) sbName.textContent = name;
 }
 
 /* ============================================================
@@ -117,13 +119,32 @@ function wireSidebar() {
   });
   document.getElementById('mobileMenuBtn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('mobile-open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    document.body.classList.toggle('no-scroll');
   });
+  document.getElementById('sidebarOverlay').addEventListener('click', closeMobileSidebar);
   document.getElementById('quickAddSidebarBtn').addEventListener('click', () => openTransactionForm());
+  document.getElementById('sidebarProfileBtn').addEventListener('click', (e) => {
+    const anchor = e.currentTarget;
+    const profile = Storage.getActiveProfile();
+    const withClose = (fn) => () => { fn(); closeMobileSidebar(); };
+    openActionMenu(anchor, [
+      ...(profile ? [{ icon: 'fa-solid fa-user', label: profile.name, onClick: () => {} }, { divider: true }] : []),
+      { icon: 'fa-solid fa-people-arrows', label: 'Switch Profile', onClick: withClose(() => openSwitchProfile()) },
+      { icon: 'fa-solid fa-sliders', label: 'Manage Profiles', onClick: withClose(() => openManageProfilesModal()) },
+    ]);
+  });
 }
 
 function closeMobileSidebar() {
   document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.classList.remove('no-scroll');
 }
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 980) closeMobileSidebar();
+});
 
 function wireTopbar() {
   document.getElementById('topbarSearchBtn').addEventListener('click', openPalette);
@@ -262,7 +283,7 @@ function wireModals() {
   document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
   document.getElementById('confirmOverlay').addEventListener('click', (e) => { if (e.target.id === 'confirmOverlay') closeConfirm(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); }
+    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); closeMobileSidebar(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
   });
 }
@@ -553,8 +574,11 @@ function walletCardHtml(w) {
   <div class="wallet-card ${w.archived ? 'archived' : ''}" style="--wc-color:${w.color}" data-action="open-wallet" data-id="${w.id}">
     <div class="wallet-card-top">
       <div class="wc-icon" style="background:${w.color}"><i class="${w.icon}"></i></div>
-      <div class="dropdown">
-        <button class="wc-menu-btn" data-action="wallet-menu" data-id="${w.id}" onclick="event.stopPropagation()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      <div class="wallet-card-top-actions">
+        <span class="wallet-drag-handle" title="Drag to reorder" onclick="event.stopPropagation()"><i class="fa-solid fa-grip-vertical"></i></span>
+        <div class="dropdown">
+          <button class="wc-menu-btn" data-action="wallet-menu" data-id="${w.id}" onclick="event.stopPropagation()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        </div>
       </div>
     </div>
     <div class="wc-name">${escapeHtml(w.name)}</div>
@@ -1959,7 +1983,7 @@ function wireSettingsPanel(key) {
       };
       Settings.updateSettings(patch);
       toast('Settings saved.', 'success');
-      document.getElementById('avatarBtn').textContent = initials(patch.ownerName || 'JD');
+      updateAvatarDisplay();
       updateTopbarNetWorth();
     });
   } else if (key === 'categories') {
@@ -2149,6 +2173,10 @@ function wireWalletDragSort() {
     animation: 180,
     filter: '.add-wallet-card',
     draggable: '.wallet-card',
+    handle: '.wallet-drag-handle',
+    delay: 120,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 6,
     ghostClass: 'skeleton',
     onEnd: () => {
       const ids = [...grid.querySelectorAll('.wallet-card')].map(el => el.dataset.id);

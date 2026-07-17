@@ -69,12 +69,23 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="sidebar-profile-btn" id="sidebarProfileBtn">
+        <span class="sidebar-profile-avatar" id="sidebarProfileAvatar">JD</span>
+        <span class="sidebar-profile-info">
+          <span class="sidebar-profile-name" id="sidebarProfileName">Profile</span>
+          <span class="sidebar-profile-sub">Switch or manage</span>
+        </span>
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
       <button class="btn btn-ghost btn-block" id="quickAddSidebarBtn">
         <i class="fa-solid fa-plus"></i><span>Quick Add</span>
       </button>
       <div class="sidebar-hint"><kbd>Ctrl</kbd><kbd>K</kbd><span>Command palette</span></div>
     </div>
   </aside>
+
+  <!-- Mobile sidebar backdrop (tap to close) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- ============ MAIN ============ -->
   <div class="main-col">

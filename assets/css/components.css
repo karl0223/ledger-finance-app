@@ -119,8 +119,8 @@
 .progress-fill.warn { background: linear-gradient(90deg, var(--amber), #ffd76f); }
 
 /* ---- Table ---- */
-.table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border-subtle); }
-table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--bg-glass); }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--r-lg); border: 1px solid var(--border-subtle); }
+table.data-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; background: var(--bg-glass); }
 table.data-table thead th {
   text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--text-low); font-weight: 600; padding: 12px 16px;
@@ -151,7 +151,7 @@ table.data-table tbody tr:hover { background: var(--bg-2); }
 .dropdown-menu {
   position: absolute; top: calc(100% + 6px); right: 0;
   background: var(--bg-2); border: 1px solid var(--border);
-  border-radius: var(--r-md); min-width: 180px; padding: 6px;
+  border-radius: var(--r-md); min-width: 180px; max-width: calc(100vw - 24px); padding: 6px;
   box-shadow: var(--shadow-md); z-index: 60;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: all var(--dur-fast) var(--ease);
