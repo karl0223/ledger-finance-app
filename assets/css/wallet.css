@@ -26,6 +26,15 @@
 }
 .wallet-card.archived { opacity: 0.55; }
 .wallet-card-top { display: flex; align-items: flex-start; justify-content: space-between; position: relative; z-index: 1; }
+.wallet-card-top-actions { display: flex; align-items: center; gap: 4px; }
+.wallet-drag-handle {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-low); cursor: grab; touch-action: none;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.wallet-drag-handle:hover { color: var(--text-hi); background: rgba(0,0,0,0.15); }
+.wallet-drag-handle:active { cursor: grabbing; }
 .wallet-card .wc-icon {
   width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
   font-size: 18px; background: var(--wc-color, var(--mint)); color: #04120c;

@@ -79,7 +79,6 @@
 /* ---------------- Phone ---------------- */
 @media (max-width: 480px) {
   .wallet-grid { grid-template-columns: 1fr; }
-  .avatar { display: none; }
   .fab {
     right: 18px;
     bottom: calc(18px + env(safe-area-inset-bottom, 0px));
