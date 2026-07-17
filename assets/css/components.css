@@ -73,6 +73,16 @@
 
 /* ---- Chart Card ---- */
 .chart-card { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--r-lg); padding: 20px; }
+
+/* Fixed-height wrapper for all Chart.js canvases. Chart.js is set up with
+   maintainAspectRatio:false, which means it sizes itself off its parent
+   element's height. Without a bounded parent, the canvas and its container
+   grow into each other in a feedback loop. This wrapper gives every chart
+   a definite box to size against so it renders at a sane height. */
+.chart-box { position: relative; width: 100%; height: 240px; }
+.chart-box.chart-box-sm { height: 200px; }
+.chart-box.chart-box-lg { height: 280px; }
+.chart-box canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
 .chart-card canvas { max-height: 280px; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .chart-legend .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-mid); }

@@ -400,7 +400,7 @@ function renderDashboard() {
 
   <div class="card" style="margin-bottom:18px;">
     <div class="card-title-row"><h3>Net Worth Trend</h3><span class="card-sub">Reconstructed from your transaction history</span></div>
-    <canvas id="chartNetWorthTrend" height="70"></canvas>
+    <div class="chart-box chart-box-lg"><canvas id="chartNetWorthTrend"></canvas></div>
   </div>
 
   <div class="quick-actions-row" style="margin-bottom:18px;">
@@ -413,11 +413,11 @@ function renderDashboard() {
   <div class="dash-2col" style="margin-bottom:18px;">
     <div class="card">
       <div class="card-title-row"><h3>Cash Flow — Income vs Expense</h3><span class="card-sub">Last 6 months</span></div>
-      <canvas id="chartCashFlow" height="90"></canvas>
+      <div class="chart-box"><canvas id="chartCashFlow"></canvas></div>
     </div>
     <div class="card">
       <div class="card-title-row"><h3>Expense by Category</h3><span class="card-sub">This month</span></div>
-      <canvas id="chartExpenseDonut" height="90"></canvas>
+      <div class="chart-box"><canvas id="chartExpenseDonut"></canvas></div>
       <div class="chart-legend" id="expenseDonutLegend"></div>
     </div>
   </div>
@@ -431,7 +431,7 @@ function renderDashboard() {
     </div>
     <div class="card">
       <div class="card-title-row"><h3>Wallet Distribution</h3></div>
-      <canvas id="chartWalletDonut" height="90"></canvas>
+      <div class="chart-box"><canvas id="chartWalletDonut"></canvas></div>
       <div class="chart-legend" id="walletDonutLegend"></div>
     </div>
   </div>
@@ -580,7 +580,7 @@ function openWalletDetail(id) {
     </div>
     <div class="card" style="margin-bottom:16px;padding:14px;">
       <div class="card-title-row"><h3 style="font-size:13px;">Balance Timeline</h3></div>
-      <canvas id="chartWalletTimeline" height="70"></canvas>
+      <div class="chart-box"><canvas id="chartWalletTimeline"></canvas></div>
     </div>
     ${w.notes ? `<div class="form-group"><span class="form-label">Notes</span><p style="font-size:13px;color:var(--text-mid);">${escapeHtml(w.notes)}</p></div>` : ''}
     <div class="card-title-row"><h3 style="font-size:13px;">Recent Activity</h3></div>
@@ -1504,27 +1504,27 @@ function renderAnalytics() {
   <div class="page-head"><div><h1>Analytics</h1><p>Deep dive into your spending and saving patterns.</p></div></div>
   <div class="chart-card" style="margin-bottom:18px;">
     <div class="card-title-row"><h3>Net Worth Over Time</h3><span class="card-sub">Reconstructed from your full transaction history</span></div>
-    <canvas id="anChartNetWorth" height="80"></canvas>
+    <div class="chart-box chart-box-lg"><canvas id="anChartNetWorth"></canvas></div>
   </div>
   <div class="dash-2col" style="margin-bottom:18px;">
-    <div class="chart-card"><div class="card-title-row"><h3>Income vs Expense</h3><span class="card-sub">Last 6 months</span></div><canvas id="anChartIncomeExpense" height="90"></canvas></div>
-    <div class="chart-card"><div class="card-title-row"><h3>Cash Flow (Cumulative)</h3></div><canvas id="anChartCashFlow" height="90"></canvas></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Income vs Expense</h3><span class="card-sub">Last 6 months</span></div><div class="chart-box"><canvas id="anChartIncomeExpense"></canvas></div></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Cash Flow (Cumulative)</h3></div><div class="chart-box"><canvas id="anChartCashFlow"></canvas></div></div>
   </div>
   <div class="dash-2col" style="margin-bottom:18px;">
-    <div class="chart-card"><div class="card-title-row"><h3>Expense Categories</h3></div><canvas id="anChartExpenseCat" height="100"></canvas><div class="chart-legend" id="anExpenseCatLegend"></div></div>
-    <div class="chart-card"><div class="card-title-row"><h3>Income Sources</h3></div><canvas id="anChartIncomeSrc" height="100"></canvas><div class="chart-legend" id="anIncomeSrcLegend"></div></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Expense Categories</h3></div><div class="chart-box chart-box-sm"><canvas id="anChartExpenseCat"></canvas></div><div class="chart-legend" id="anExpenseCatLegend"></div></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Income Sources</h3></div><div class="chart-box chart-box-sm"><canvas id="anChartIncomeSrc"></canvas></div><div class="chart-legend" id="anIncomeSrcLegend"></div></div>
   </div>
   <div class="dash-2col">
-    <div class="chart-card"><div class="card-title-row"><h3>Monthly Spending Trend</h3></div><canvas id="anChartSpendTrend" height="90"></canvas></div>
-    <div class="chart-card"><div class="card-title-row"><h3>Savings Growth</h3></div><canvas id="anChartSavingsGrowth" height="90"></canvas></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Monthly Spending Trend</h3></div><div class="chart-box"><canvas id="anChartSpendTrend"></canvas></div></div>
+    <div class="chart-card"><div class="card-title-row"><h3>Savings Growth</h3></div><div class="chart-box"><canvas id="anChartSavingsGrowth"></canvas></div></div>
   </div>
   <div class="card" style="margin-top:18px;">
     <div class="card-title-row"><h3>Budget Utilization</h3></div>
-    <canvas id="anChartBudgetUtil" height="80"></canvas>
+    <div class="chart-box chart-box-lg"><canvas id="anChartBudgetUtil"></canvas></div>
   </div>
   <div class="chart-card" style="margin-top:18px;">
     <div class="card-title-row"><h3>Wallet Distribution</h3></div>
-    <canvas id="anChartWalletDist" height="90"></canvas><div class="chart-legend" id="anWalletDistLegend"></div>
+    <div class="chart-box chart-box-sm"><canvas id="anChartWalletDist"></canvas></div><div class="chart-legend" id="anWalletDistLegend"></div>
   </div>`;
 }
 function renderAnalyticsCharts() {
