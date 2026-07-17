@@ -1,0 +1,35 @@
+/* ==========================================================================
+   TRANSACTIONS
+   ========================================================================== */
+
+.tx-type-selector { display: flex; gap: 8px; margin-bottom: 18px; background: var(--bg-2); padding: 5px; border-radius: var(--r-md); }
+.tx-type-selector .tt-opt {
+  flex: 1; text-align: center; padding: 9px; border-radius: var(--r-sm); cursor: pointer;
+  font-size: 12.5px; font-weight: 600; color: var(--text-mid); transition: all var(--dur-fast) var(--ease);
+}
+.tx-type-selector .tt-opt.active.income { background: var(--mint-dim); color: var(--mint); }
+.tx-type-selector .tt-opt.active.expense { background: var(--coral-dim); color: var(--coral); }
+.tx-type-selector .tt-opt.active.transfer { background: var(--blue-dim); color: var(--blue); }
+.tx-type-selector .tt-opt.active.adjustment { background: var(--amber-dim); color: var(--amber); }
+.tx-type-selector .tt-opt.active.refund { background: var(--violet-dim); color: var(--violet); }
+
+.category-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 190px; overflow-y: auto; padding: 2px; }
+.category-picker .cat-opt {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px;
+  border-radius: var(--r-sm); background: var(--bg-2); border: 1px solid transparent;
+  cursor: pointer; font-size: 10.5px; color: var(--text-mid); text-align: center;
+}
+.category-picker .cat-opt i { font-size: 14px; }
+.category-picker .cat-opt.selected { border-color: var(--mint); color: var(--mint); background: var(--mint-dim); }
+
+.amount-input-big { font-size: 30px; font-family: var(--font-mono); font-weight: 700; text-align: center; background: transparent; border: none; color: var(--text-hi); width: 100%; outline: none; }
+.amount-currency-prefix { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.amount-currency-prefix span { font-size: 20px; color: var(--text-low); font-family: var(--font-mono); }
+
+.tx-filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+
+.type-icon-income { background: var(--mint-dim); color: var(--mint); }
+.type-icon-expense { background: var(--coral-dim); color: var(--coral); }
+.type-icon-transfer { background: var(--blue-dim); color: var(--blue); }
+.type-icon-adjustment { background: var(--amber-dim); color: var(--amber); }
+.type-icon-refund { background: var(--violet-dim); color: var(--violet); }

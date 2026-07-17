@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Personal Finance &amp; Wallet Manager</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- CSS -->
+<link rel="stylesheet" href="assets/css/variables.css">
+<link rel="stylesheet" href="assets/css/layout.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/dashboard.css">
+<link rel="stylesheet" href="assets/css/wallet.css">
+<link rel="stylesheet" href="assets/css/transaction.css">
+<link rel="stylesheet" href="assets/css/animations.css">
+<link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+
+<div id="app-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark"><i class="fa-solid fa-layer-group"></i></div>
+      <div class="brand-text">
+        <span class="brand-name">Ledger</span>
+        <span class="brand-sub">Wallet Manager</span>
+      </div>
+      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">
+        <i class="fa-solid fa-angles-left"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-group-label">Overview</div>
+      <a class="nav-item active" data-route="dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+      <a class="nav-item" data-route="analytics"><i class="fa-solid fa-chart-pie"></i><span>Analytics</span></a>
+
+      <div class="nav-group-label">Money</div>
+      <a class="nav-item" data-route="wallets"><i class="fa-solid fa-wallet"></i><span>Wallets</span></a>
+      <a class="nav-item" data-route="transactions"><i class="fa-solid fa-right-left"></i><span>Transactions</span></a>
+      <a class="nav-item" data-route="transfers"><i class="fa-solid fa-arrow-right-arrow-left"></i><span>Transfers</span></a>
+
+      <div class="nav-group-label">Planning</div>
+      <a class="nav-item" data-route="budgets"><i class="fa-solid fa-sliders"></i><span>Budgets</span></a>
+      <a class="nav-item" data-route="debts"><i class="fa-solid fa-hand-holding-dollar"></i><span>Debts</span></a>
+      <a class="nav-item" data-route="paycheck"><i class="fa-solid fa-money-check-dollar"></i><span>Paycheck Allocator</span></a>
+      <a class="nav-item" data-route="goals"><i class="fa-solid fa-bullseye"></i><span>Savings Goals</span></a>
+      <a class="nav-item" data-route="bills"><i class="fa-solid fa-file-invoice-dollar"></i><span>Bills</span></a>
+
+      <div class="nav-group-label">Insights</div>
+      <a class="nav-item" data-route="reports"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a>
+
+      <div class="nav-group-label">System</div>
+      <a class="nav-item" data-route="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-block" id="quickAddSidebarBtn">
+        <i class="fa-solid fa-plus"></i><span>Quick Add</span>
+      </button>
+      <div class="sidebar-hint"><kbd>Ctrl</kbd><kbd>K</kbd><span>Command palette</span></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main-col">
+
+    <!-- TOP NAV -->
+    <header class="topbar">
+      <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button>
+
+      <div class="topbar-search" id="topbarSearchBtn">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Search wallets, transactions, bills…</span>
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="net-worth-pill" id="topbarNetWorth">
+          <span class="label">Net Worth</span>
+          <span class="value" id="topbarNetWorthValue">₱0.00</span>
+        </div>
+        <button class="icon-btn" id="notifBtn" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge-dot" id="notifDot" hidden></span>
+        </button>
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <div class="avatar" id="avatarBtn">JD</div>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main class="page-content" id="pageContent">
+      <!-- Injected per-route -->
+    </main>
+  </div>
+</div>
+
+<!-- FLOATING QUICK ADD -->
+<button class="fab" id="fabQuickAdd" title="Quick add (transaction)">
+  <i class="fa-solid fa-plus"></i>
+</button>
+
+<!-- NOTIFICATION DRAWER -->
+<div class="drawer-overlay" id="notifOverlay"></div>
+<aside class="drawer" id="notifDrawer">
+  <div class="drawer-header">
+    <h3>Notifications</h3>
+    <button class="icon-btn" id="notifCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body" id="notifList"></div>
+</aside>
+
+<!-- COMMAND PALETTE -->
+<div class="palette-overlay" id="paletteOverlay">
+  <div class="palette" id="palette">
+    <div class="palette-input-row">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="paletteInput" placeholder="Type a command or search…" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="palette-results" id="paletteResults"></div>
+  </div>
+</div>
+
+<!-- GENERIC MODAL ROOT -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalRoot" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3 id="modalTitle">Title</h3>
+      <button class="icon-btn" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal modal-sm" id="confirmModal">
+    <div class="modal-header">
+      <h3 id="confirmTitle">Are you sure?</h3>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- Skeleton template for loading states -->
+<template id="skeletonRowTemplate">
+  <div class="skeleton skeleton-row"></div>
+</template>
+
+<!-- ============ CDN LIBS ============ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+
+<!-- ============ APP (ES Modules) ============ -->
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

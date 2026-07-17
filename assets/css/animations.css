@@ -1,0 +1,41 @@
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes skeletonShine {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(95,227,168,0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(95,227,168,0); }
+}
+
+.route-view { animation: fadeInUp var(--dur-med) var(--ease); }
+.card, .stat-card, .chart-card, .wallet-card { animation: fadeIn var(--dur-med) var(--ease); }
+.modal-body, .palette-item { animation: none; }
+.pulse { animation: pulseGlow 2s infinite; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
