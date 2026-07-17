@@ -3,7 +3,6 @@
 // ==========================================================================
 import { uid, todayISO, addMonths, WALLET_COLORS, WALLET_ICONS, DEFAULT_WALLET_TYPES, DEFAULT_CATEGORIES } from './utilities.js';
 
-const STORAGE_KEY = 'financeData';
 const SCHEMA_VERSION = 1;
 
 function defaultSettings() {
@@ -141,11 +140,83 @@ function buildSampleData() {
 
 /* ---------------- Public API ---------------- */
 let cachedState = null;
+let cachedProfileId = null;
 
-export function loadState() {
-  if (cachedState) return cachedState;
+function storageKeyFor(profileId) {
+  return `financeData_${profileId}`;
+}
+
+/* ---------------- Profiles (password-less, per-browser identities) ---------------- */
+const PROFILES_KEY = 'ledgerProfiles';
+const ACTIVE_PROFILE_KEY = 'ledgerActiveProfileId';
+
+export function getProfiles() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(PROFILES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+
+function saveProfiles(list) {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(list));
+}
+
+export function getActiveProfileId() {
+  return localStorage.getItem(ACTIVE_PROFILE_KEY);
+}
+
+export function setActiveProfileId(id) {
+  localStorage.setItem(ACTIVE_PROFILE_KEY, id);
+  cachedState = null;
+  cachedProfileId = null;
+}
+
+export function getActiveProfile() {
+  const id = getActiveProfileId();
+  return getProfiles().find(p => p.id === id) || null;
+}
+
+/** Creates a profile (identity only — name + color, no password) and
+ *  initializes its own isolated storage bucket, separate from every other
+ *  profile in this browser. */
+export function createProfile({ name, color, withSample = true }) {
+  const profiles = getProfiles();
+  const profile = {
+    id: uid('profile'),
+    name: (name || 'My Finances').trim() || 'My Finances',
+    color: color || '#5fe3a8',
+    createdAt: new Date().toISOString(),
+  };
+  profiles.push(profile);
+  saveProfiles(profiles);
+  const data = withSample ? buildSampleData() : emptyState();
+  localStorage.setItem(storageKeyFor(profile.id), JSON.stringify(data));
+  return profile;
+}
+
+export function renameProfile(id, name) {
+  const profiles = getProfiles();
+  const p = profiles.find(x => x.id === id);
+  if (p && name && name.trim()) { p.name = name.trim(); saveProfiles(profiles); }
+  return p;
+}
+
+/** Deletes a profile's identity AND its finance data permanently. */
+export function deleteProfile(id) {
+  saveProfiles(getProfiles().filter(p => p.id !== id));
+  localStorage.removeItem(storageKeyFor(id));
+  if (getActiveProfileId() === id) localStorage.removeItem(ACTIVE_PROFILE_KEY);
+}
+
+/* ---------------- State (scoped to whichever profile is active) ---------------- */
+export function loadState() {
+  const activeId = getActiveProfileId();
+  if (!activeId) throw new Error('No active profile — call setActiveProfileId first.');
+  if (cachedState && cachedProfileId === activeId) return cachedState;
+
+  const key = storageKeyFor(activeId);
+  try {
+    const raw = localStorage.getItem(key);
     if (raw) {
       cachedState = JSON.parse(raw);
       // migration safety: fill any missing keys
@@ -154,21 +225,22 @@ export function loadState() {
         if (cachedState[k] === undefined) cachedState[k] = fallback[k];
       }
     } else {
+      // Shouldn't normally happen (createProfile seeds storage), but guard anyway.
       cachedState = buildSampleData();
-      persist();
     }
   } catch (e) {
     console.error('Failed to load state, resetting.', e);
     cachedState = buildSampleData();
-    persist();
   }
+  cachedProfileId = activeId;
+  persist();
   window.__LEDGER_SETTINGS__ = cachedState.settings;
   return cachedState;
 }
 
 export function persist() {
-  if (!cachedState) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedState));
+  if (!cachedState || !cachedProfileId) return;
+  localStorage.setItem(storageKeyFor(cachedProfileId), JSON.stringify(cachedState));
 }
 
 export function getState() {

@@ -1,7 +1,7 @@
 // ==========================================================================
 // APP — router, view rendering, UI wiring
 // ==========================================================================
-import { loadState, getState, persist } from './storage.js';
+import * as Storage from './storage.js';
 import * as Utils from './utilities.js';
 import * as Wallets from './walletEngine.js';
 import * as Txns from './transactionEngine.js';
@@ -16,20 +16,36 @@ import * as Settings from './settings.js';
 
 const { formatMoney, formatCompact, formatDate, escapeHtml, uid, todayISO, nowTime, relativeTime, daysUntil,
   WALLET_COLORS, WALLET_ICONS, PAYMENT_METHODS, categoryMeta, initials, download, monthKey, monthLabel } = Utils;
+const { loadState, getState, persist } = Storage;
 
 /* ============================================================
-   BOOTSTRAP
+   BOOTSTRAP — gated on a local profile (no password, no server)
    ============================================================ */
-let state = loadState();
-Settings.applyTheme(state.settings.theme);
+let state = null;
 
 const pageContent = document.getElementById('pageContent');
 let currentRoute = 'dashboard';
 let currentSubState = {}; // per-route ephemeral UI state (filters, selected wallet, etc.)
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', boot);
 
-function init() {
+/** Entry point: decide whether we need a profile picker/creator, or can go
+ *  straight into the app because a valid active profile already exists. */
+function boot() {
+  const activeId = Storage.getActiveProfileId();
+  const profiles = Storage.getProfiles();
+  const active = profiles.find(p => p.id === activeId);
+  if (!active) {
+    showProfileGate(profiles.length ? 'pick' : 'create');
+    return;
+  }
+  startApp();
+}
+
+/** Called once a valid profile is active — boots the real app on top of it. */
+function startApp() {
+  state = loadState();
+  Settings.applyTheme(state.settings.theme);
   wireSidebar();
   wireTopbar();
   wireModals();
@@ -38,7 +54,18 @@ function init() {
   wireDrawer();
   navigate('dashboard');
   renderNotifBadge();
-  document.getElementById('avatarBtn').textContent = initials(state.settings.ownerName || 'JD');
+  updateAvatarDisplay();
+}
+
+function updateAvatarDisplay() {
+  const profile = Storage.getActiveProfile();
+  const avatar = document.getElementById('avatarBtn');
+  if (profile) {
+    avatar.textContent = initials(profile.name);
+    avatar.style.background = profile.color ? `linear-gradient(135deg, ${profile.color}, var(--blue))` : '';
+  } else {
+    avatar.textContent = initials(state?.settings?.ownerName || 'JD');
+  }
 }
 
 /* ============================================================
@@ -107,6 +134,14 @@ function wireTopbar() {
     rerender();
   });
   document.getElementById('notifBtn').addEventListener('click', toggleNotifDrawer);
+  document.getElementById('avatarBtn').addEventListener('click', (e) => {
+    const profile = Storage.getActiveProfile();
+    openActionMenu(e.currentTarget, [
+      ...(profile ? [{ icon: 'fa-solid fa-user', label: profile.name, onClick: () => {} }, { divider: true }] : []),
+      { icon: 'fa-solid fa-people-arrows', label: 'Switch Profile', onClick: () => openSwitchProfile() },
+      { icon: 'fa-solid fa-sliders', label: 'Manage Profiles', onClick: () => openManageProfilesModal() },
+    ]);
+  });
 }
 
 function wireFab() {
@@ -2241,4 +2276,162 @@ function openDebtHistoryModal(id) {
     </tbody></table></div>
   `;
   openModal(`${d.name} — Payment History`, body, `<button class="btn btn-ghost" data-action="close-modal">Close</button>`, { size: 'modal-lg' });
+}
+
+/* ============================================================
+   PROFILE GATE — password-less local profile picker/creator
+   ============================================================ */
+function showProfileGate(mode) {
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('fabQuickAdd').style.display = 'none';
+  Charts.destroyAllCharts();
+  document.getElementById('profileGate').classList.add('open');
+  if (mode === 'create') renderProfileCreateGate();
+  else renderProfilePickGate();
+}
+
+function hideProfileGate() {
+  document.getElementById('profileGate').classList.remove('open');
+  document.getElementById('app-shell').style.display = '';
+  document.getElementById('fabQuickAdd').style.display = '';
+}
+
+function renderProfilePickGate() {
+  const profiles = Storage.getProfiles();
+  const inner = document.getElementById('profileGateInner');
+  inner.innerHTML = `
+    <div class="profile-gate-brand"><i class="fa-solid fa-layer-group"></i></div>
+    <h2>Who's using Ledger?</h2>
+    <p class="sub">Pick a profile — no password needed. Each one keeps its own separate wallets, bills, and budgets on this device.</p>
+    <div class="profile-grid">
+      ${profiles.map(p => `
+        <div class="profile-card" data-id="${p.id}">
+          <div class="pc-avatar" style="background:${p.color}">${initials(p.name)}</div>
+          <div class="pc-name">${escapeHtml(p.name)}</div>
+        </div>`).join('')}
+      <div class="profile-card add-profile-card" id="gateAddProfileBtn">
+        <div class="pc-avatar"><i class="fa-solid fa-plus"></i></div>
+        <div class="pc-name">Add Profile</div>
+      </div>
+    </div>
+    <div id="profileCreateSlot"></div>
+  `;
+  inner.querySelectorAll('.profile-card[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      Storage.setActiveProfileId(el.dataset.id);
+      hideProfileGate();
+      startApp();
+    });
+  });
+  document.getElementById('gateAddProfileBtn').addEventListener('click', () => {
+    document.getElementById('profileCreateSlot').innerHTML = profileCreateFormHtml();
+    wireProfileCreateForm(false);
+  });
+}
+
+function renderProfileCreateGate() {
+  const inner = document.getElementById('profileGateInner');
+  inner.innerHTML = `
+    <div class="profile-gate-brand"><i class="fa-solid fa-layer-group"></i></div>
+    <h2>Welcome to Ledger</h2>
+    <p class="sub">Create a profile to get started — just a name, no password. You can add more profiles later so other people can use this device with their own separate data.</p>
+    ${profileCreateFormHtml()}
+  `;
+  wireProfileCreateForm(true);
+}
+
+function profileCreateFormHtml() {
+  return `
+  <form id="profileCreateForm" class="profile-create-form">
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" name="name" placeholder="e.g. Karl, Mom, Household" required autofocus>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Color</label>
+      <div class="color-swatch-row" id="gateColorSwatchRow">
+        ${WALLET_COLORS.map((c,i) => `<div class="color-swatch ${i===0?'selected':''}" style="background:${c}" data-color="${c}"></div>`).join('')}
+      </div>
+      <input type="hidden" name="color" value="${WALLET_COLORS[0]}">
+    </div>
+    <div class="form-toggle-row">
+      <div><span class="form-label" style="margin:0;">Start with example data</span><div class="form-hint">Adds sample wallets/bills/budgets so there's something to look at right away</div></div>
+      <label class="switch"><input type="checkbox" name="withSample" checked><span class="slider"></span></label>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;"><i class="fa-solid fa-check"></i> Create Profile</button>
+  </form>`;
+}
+
+function wireProfileCreateForm(isFirst) {
+  const form = document.getElementById('profileCreateForm');
+  form.querySelectorAll('.color-swatch').forEach(sw => sw.addEventListener('click', () => {
+    form.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    sw.classList.add('selected');
+    form.querySelector('[name="color"]').value = sw.dataset.color;
+  }));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const name = fd.get('name');
+    if (!name || !name.trim()) return;
+    const profile = Storage.createProfile({ name, color: fd.get('color'), withSample: fd.get('withSample') === 'on' });
+    Storage.setActiveProfileId(profile.id);
+    hideProfileGate();
+    startApp();
+  });
+}
+
+/* ---------------- In-app profile switching / management ---------------- */
+function openSwitchProfile() {
+  showProfileGate('pick');
+}
+
+function openManageProfilesModal() {
+  const profiles = Storage.getProfiles();
+  const activeId = Storage.getActiveProfileId();
+  const body = `
+    <p class="form-hint" style="margin-bottom:14px;">Rename or delete profiles on this device. Deleting a profile permanently erases its finance data — this can't be undone.</p>
+    <div id="profileManageList">
+      ${profiles.map(p => profileManageRowHtml(p, p.id === activeId)).join('')}
+    </div>
+  `;
+  openModal('Manage Profiles', body, `<button class="btn btn-ghost" data-action="close-modal">Close</button>`);
+  wireProfileManageList();
+}
+
+function profileManageRowHtml(p, isActive) {
+  return `
+  <div class="profile-manage-row" data-id="${p.id}">
+    <div class="pm-avatar" style="background:${p.color}">${initials(p.name)}</div>
+    <div class="pm-name">${escapeHtml(p.name)}${isActive ? ' <span class="badge badge-mint pm-active-badge">Active</span>' : ''}</div>
+    <button class="icon-btn btn-icon-only pm-rename-btn" data-tooltip="Rename"><i class="fa-solid fa-pen" style="font-size:11px;"></i></button>
+    <button class="icon-btn btn-icon-only pm-delete-btn" data-tooltip="${isActive ? 'Switch away first to delete' : 'Delete'}" ${isActive ? 'disabled' : ''}><i class="fa-solid fa-trash" style="font-size:11px;"></i></button>
+  </div>`;
+}
+
+function wireProfileManageList() {
+  document.querySelectorAll('.profile-manage-row').forEach(row => {
+    const id = row.dataset.id;
+    row.querySelector('.pm-rename-btn').addEventListener('click', () => {
+      const p = Storage.getProfiles().find(x => x.id === id);
+      const newName = window.prompt('Rename profile', p.name);
+      if (newName && newName.trim()) {
+        Storage.renameProfile(id, newName);
+        toast('Profile renamed.', 'success');
+        if (id === Storage.getActiveProfileId()) updateAvatarDisplay();
+        closeModal(); openManageProfilesModal();
+      }
+    });
+    const delBtn = row.querySelector('.pm-delete-btn');
+    if (!delBtn.disabled) {
+      delBtn.addEventListener('click', () => {
+        const p = Storage.getProfiles().find(x => x.id === id);
+        confirmAction('Delete Profile?', `Permanently delete "${p.name}" and all of its finance data? This cannot be undone.`, () => {
+          Storage.deleteProfile(id);
+          toast('Profile deleted.', 'success');
+          closeModal(); openManageProfilesModal();
+        });
+      });
+    }
+  });
 }
