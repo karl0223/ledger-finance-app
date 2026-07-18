@@ -35,6 +35,7 @@ function boot() {
   const activeId = Storage.getActiveProfileId();
   const profiles = Storage.getProfiles();
   const active = profiles.find(p => p.id === activeId);
+  wireAppShell();
   if (!active) {
     showProfileGate(profiles.length ? 'pick' : 'create');
     return;
@@ -42,16 +43,31 @@ function boot() {
   startApp();
 }
 
-/** Called once a valid profile is active — boots the real app on top of it. */
-function startApp() {
-  state = loadState();
-  Settings.applyTheme(state.settings.theme);
+/** Wires the permanent app-shell chrome — sidebar, topbar, modals, command
+ *  palette, FAB, notification drawer. These DOM elements live for the whole
+ *  page lifetime (only the routed page content inside them changes), so
+ *  this must run exactly once. Calling it again on every profile switch
+ *  used to stack duplicate listeners on the same buttons, which made
+ *  toggle-style controls (burger menu, dark mode) silently cancel
+ *  themselves out on an even number of switches. */
+let shellWired = false;
+function wireAppShell() {
+  if (shellWired) return;
+  shellWired = true;
   wireSidebar();
   wireTopbar();
   wireModals();
   wirePalette();
   wireFab();
   wireDrawer();
+}
+
+/** Called whenever a profile becomes active — on first boot and every
+ *  profile switch/creation. Only touches per-profile state and the routed
+ *  page content; never re-wires the shell (see wireAppShell above). */
+function startApp() {
+  state = loadState();
+  Settings.applyTheme(state.settings.theme);
   navigate('dashboard');
   renderNotifBadge();
   updateAvatarDisplay();
@@ -283,7 +299,7 @@ function wireModals() {
   document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
   document.getElementById('confirmOverlay').addEventListener('click', (e) => { if (e.target.id === 'confirmOverlay') closeConfirm(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); closeMobileSidebar(); }
+    if (e.key === 'Escape') { closeModal(); closeConfirm(); closePalette(); closeNotifDrawer(); closeMobileSidebar(); closeActionMenu(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
   });
 }
@@ -1711,11 +1727,42 @@ function openActionMenu(anchorEl, items) {
   menu.className = 'dropdown-menu open';
   menu.id = 'floatingActionMenu';
   menu.style.position = 'fixed';
-  const rect = anchorEl.getBoundingClientRect();
-  menu.style.top = (rect.bottom + 6) + 'px';
-  menu.style.left = Math.max(8, rect.right - 190) + 'px';
+  menu.style.transition = 'none';
+  menu.style.right = 'auto';
+  menu.style.bottom = 'auto';
+  // Render off-screen first so we can measure its real width/height before
+  // ever painting it at a location — avoids a flash-then-jump.
+  menu.style.left = '-9999px';
+  menu.style.top = '-9999px';
   menu.innerHTML = items.map((it, i) => it.divider ? `<div class="dd-divider"></div>` : `<div class="dd-item ${it.danger ? 'danger' : ''}" data-idx="${i}"><i class="${it.icon}"></i>${it.label}</div>`).join('');
   document.body.appendChild(menu);
+
+  const margin = 8;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const rect = anchorEl.getBoundingClientRect();
+  const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
+
+  // Horizontal: prefer aligning the menu's right edge to the anchor's right
+  // edge; if that would push it off the left of the screen, align to the
+  // anchor's left edge instead. Then clamp either way so it never runs off
+  // either side, however narrow the viewport.
+  let left = rect.right - menuW;
+  if (left < margin) left = rect.left;
+  left = Math.min(Math.max(margin, left), vw - menuW - margin);
+
+  // Vertical: prefer opening below the anchor; flip above it if there's not
+  // enough room below but there is above. As a last resort (tiny viewport),
+  // clamp to the screen and let the menu scroll internally.
+  let top = rect.bottom + 6;
+  if (top + menuH > vh - margin) {
+    const above = rect.top - 6 - menuH;
+    top = above >= margin ? above : margin;
+  }
+  const maxH = vh - top - margin;
+  if (menuH > maxH) { menu.style.maxHeight = maxH + 'px'; menu.style.overflowY = 'auto'; }
+
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
   menu.querySelectorAll('.dd-item').forEach(el => {
     el.addEventListener('click', () => { items[Number(el.dataset.idx)].onClick(); closeActionMenu(); });
   });

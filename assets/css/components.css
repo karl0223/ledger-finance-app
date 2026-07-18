@@ -149,12 +149,12 @@ table.data-table tbody tr:hover { background: var(--bg-2); }
 /* ---- Dropdown ---- */
 .dropdown { position: relative; display: inline-block; }
 .dropdown-menu {
-  position: absolute; top: calc(100% + 6px); right: 0;
+  position: fixed; top: 0; left: 0;
   background: var(--bg-2); border: 1px solid var(--border);
   border-radius: var(--r-md); min-width: 180px; max-width: calc(100vw - 24px); padding: 6px;
   box-shadow: var(--shadow-md); z-index: 60;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
-  transition: all var(--dur-fast) var(--ease);
+  transition: opacity var(--dur-fast) var(--ease), visibility var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
 .dropdown-menu .dd-item {
