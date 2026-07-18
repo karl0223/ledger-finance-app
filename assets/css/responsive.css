@@ -9,6 +9,21 @@
    <380    small phone (iPhone SE and similar)
    ========================================================================== */
 
+/* ---------------- Touch devices: prevent zoom-on-focus ----------------
+   iOS Safari zooms the whole page in when a focused input's font-size is
+   under 16px. Scoping this to touch/narrow viewports (rather than changing
+   the base 13.5px everywhere) keeps desktop typography as designed while
+   fixing the zoom on phones/tablets — and the larger text also gives these
+   fields a taller, more comfortably tappable hit area for free. */
+@media (max-width: 980px), (pointer: coarse) {
+  .form-input, .form-select, .form-textarea, .palette-input-row input { font-size: 16px; }
+}
+
+@media (pointer: coarse) {
+  .wc-menu-btn, .wallet-drag-handle { width: 40px; height: 40px; }
+  .icon-btn { width: 42px; height: 42px; }
+}
+
 /* ---------------- Small laptop / narrow desktop ---------------- */
 @media (max-width: 1200px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -87,7 +102,6 @@
   .dash-2col, .dash-3col { gap: 14px; }
   .grid { gap: 14px; }
   .category-picker { grid-template-columns: repeat(3, 1fr); max-height: 160px; }
-  .icon-btn { width: 40px; height: 40px; }
   .nav-item { padding: 11px 12px; }
   .btn { padding: 10px 16px; }
   .card, .chart-card, .stat-card, .wallet-card { padding: 16px; }

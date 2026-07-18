@@ -119,6 +119,19 @@ body {
 }
 ::selection { background: var(--mint-dim); color: var(--text-hi); }
 
+/* ---- Touch & zoom behavior ----
+   Prevents the double-tap-to-zoom gesture on interactive elements and the
+   flash of the default gray tap-highlight box on iOS/Android. A visible
+   focus-visible ring is kept (and only removed for mouse/touch clicks) so
+   keyboard and screen-reader users don't lose their focus indicator. */
+a, button, input, select, textarea, label,
+.btn, .icon-btn, .nav-item,
+[data-action], [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+:focus:not(:focus-visible) { outline: none; }
+
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
