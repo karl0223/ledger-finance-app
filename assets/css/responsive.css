@@ -26,10 +26,10 @@
 
 /* ---------------- Small laptop / narrow desktop ---------------- */
 @media (max-width: 1200px) {
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .dash-2col { grid-template-columns: 1fr; }
-  .dash-3col { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-2col { grid-template-columns: minmax(0, 1fr); }
+  .dash-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .net-worth-pill { display: none; }
 }
 
@@ -50,17 +50,17 @@
   .topbar-search { width: 220px; }
   .topbar-search span { display: none; }
   .search-kbd { display: none; }
-  .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
+  .grid-2-1, .grid-1-2 { grid-template-columns: minmax(0, 1fr); }
+  .form-row { grid-template-columns: minmax(0, 1fr); }
   .page-content { padding: 22px 20px 60px; }
 }
 
 /* ---------------- Large phone / small tablet / landscape phone ---------------- */
 @media (max-width: 720px) {
   .page-content { padding: 18px 14px 96px; }
-  .grid-4, .grid-3, .grid-2, .dash-3col { grid-template-columns: 1fr; }
-  .wallet-grid { grid-template-columns: 1fr 1fr; }
-  .category-picker { grid-template-columns: repeat(3, 1fr); }
+  .grid-4, .grid-3, .grid-2, .dash-3col { grid-template-columns: minmax(0, 1fr); }
+  .wallet-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .category-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .topbar { padding: 0 14px; gap: 8px; }
   .topbar-search { width: 44px; padding: 9px; justify-content: center; }
   .topbar-search i { margin: 0; }
@@ -93,7 +93,7 @@
 
 /* ---------------- Phone ---------------- */
 @media (max-width: 480px) {
-  .wallet-grid { grid-template-columns: 1fr; }
+  .wallet-grid { grid-template-columns: minmax(0, 1fr); }
   .fab {
     right: 18px;
     bottom: calc(18px + env(safe-area-inset-bottom, 0px));
@@ -101,7 +101,7 @@
   }
   .dash-2col, .dash-3col { gap: 14px; }
   .grid { gap: 14px; }
-  .category-picker { grid-template-columns: repeat(3, 1fr); max-height: 160px; }
+  .category-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); max-height: 160px; }
   .nav-item { padding: 11px 12px; }
   .btn { padding: 10px 16px; }
   .card, .chart-card, .stat-card, .wallet-card { padding: 16px; }
